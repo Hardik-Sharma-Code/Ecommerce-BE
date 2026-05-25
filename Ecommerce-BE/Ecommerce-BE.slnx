@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../Ecommerce-BE.Repository/Ecommerce-BE.Repository.csproj" />
+  <Project Path="../Ecommerce-BE.Services/Ecommerce-BE.Services.csproj" />
+  <Project Path="../Ecommerce-BE.Shared.Kernel/Ecommerce-BE.Shared.Kernel.csproj" />
+  <Project Path="Ecommerce-BE.csproj" />
+</Solution>
