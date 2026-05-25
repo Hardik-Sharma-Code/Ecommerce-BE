@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -151,8 +151,8 @@ namespace Ecommerce_BE.Repository.Migrations
                 name: "UserLogins",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    ProviderKey = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
@@ -196,8 +196,8 @@ namespace Ecommerce_BE.Repository.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -242,7 +242,6 @@ namespace Ecommerce_BE.Repository.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            // Indexes
             migrationBuilder.CreateIndex(
                 name: "IX_CustomerProfiles_UserId",
                 table: "CustomerProfiles",
@@ -309,16 +308,35 @@ namespace Ecommerce_BE.Repository.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "CustomerProfiles");
-            migrationBuilder.DropTable(name: "RefreshTokens");
-            migrationBuilder.DropTable(name: "RoleClaims");
-            migrationBuilder.DropTable(name: "UserClaims");
-            migrationBuilder.DropTable(name: "UserLogins");
-            migrationBuilder.DropTable(name: "UserRoles");
-            migrationBuilder.DropTable(name: "UserTokens");
-            migrationBuilder.DropTable(name: "VendorProfiles");
-            migrationBuilder.DropTable(name: "Roles");
-            migrationBuilder.DropTable(name: "Users");
+            migrationBuilder.DropTable(
+                name: "CustomerProfiles");
+
+            migrationBuilder.DropTable(
+                name: "RefreshTokens");
+
+            migrationBuilder.DropTable(
+                name: "RoleClaims");
+
+            migrationBuilder.DropTable(
+                name: "UserClaims");
+
+            migrationBuilder.DropTable(
+                name: "UserLogins");
+
+            migrationBuilder.DropTable(
+                name: "UserRoles");
+
+            migrationBuilder.DropTable(
+                name: "UserTokens");
+
+            migrationBuilder.DropTable(
+                name: "VendorProfiles");
+
+            migrationBuilder.DropTable(
+                name: "Roles");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }
