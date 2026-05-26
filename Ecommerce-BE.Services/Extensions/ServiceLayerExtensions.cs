@@ -22,6 +22,10 @@ public static class ServiceLayerExtensions
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<ISearchService, SearchService>();
+        services.AddScoped<ICartService, CartService>();
+        services.AddScoped<IWishlistService, WishlistService>();
+        services.AddScoped<IAddressService, AddressService>();
+        services.AddScoped<ICouponService, CouponService>();
 
         return services;
     }

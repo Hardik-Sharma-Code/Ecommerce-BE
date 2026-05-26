@@ -15,6 +15,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+    public DbSet<Cart> Carts => Set<Cart>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
+    public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
+    public DbSet<Coupon> Coupons => Set<Coupon>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -113,6 +118,74 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                   .WithMany(p => p.Images)
                   .HasForeignKey(pi => pi.ProductId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Cart>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.HasOne(c => c.User)
+                  .WithMany()
+                  .HasForeignKey(c => c.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(c => c.UserId).IsUnique();
+        });
+
+        builder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(ci => ci.Id);
+            entity.HasOne(ci => ci.Cart)
+                  .WithMany(c => c.Items)
+                  .HasForeignKey(ci => ci.CartId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(ci => ci.Product)
+                  .WithMany()
+                  .HasForeignKey(ci => ci.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(ci => new { ci.CartId, ci.ProductId }).IsUnique();
+        });
+
+        builder.Entity<WishlistItem>(entity =>
+        {
+            entity.HasKey(w => w.Id);
+            entity.HasOne(w => w.User)
+                  .WithMany()
+                  .HasForeignKey(w => w.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(w => w.Product)
+                  .WithMany()
+                  .HasForeignKey(w => w.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(w => new { w.UserId, w.ProductId }).IsUnique();
+        });
+
+        builder.Entity<CustomerAddress>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.HasOne(a => a.User)
+                  .WithMany()
+                  .HasForeignKey(a => a.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(a => a.Label).HasMaxLength(50).IsRequired();
+            entity.Property(a => a.FirstName).HasMaxLength(100).IsRequired();
+            entity.Property(a => a.LastName).HasMaxLength(100).IsRequired();
+            entity.Property(a => a.PhoneNumber).HasMaxLength(20);
+            entity.Property(a => a.AddressLine1).HasMaxLength(250).IsRequired();
+            entity.Property(a => a.AddressLine2).HasMaxLength(250);
+            entity.Property(a => a.City).HasMaxLength(100).IsRequired();
+            entity.Property(a => a.State).HasMaxLength(100).IsRequired();
+            entity.Property(a => a.PostalCode).HasMaxLength(20).IsRequired();
+            entity.Property(a => a.Country).HasMaxLength(100).IsRequired();
+        });
+
+        builder.Entity<Coupon>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Code).HasMaxLength(50).IsRequired();
+            entity.Property(c => c.Description).HasMaxLength(500);
+            entity.Property(c => c.DiscountValue).HasColumnType("decimal(18,2)");
+            entity.Property(c => c.MinOrderAmount).HasColumnType("decimal(18,2)");
+            entity.Property(c => c.MaxDiscountAmount).HasColumnType("decimal(18,2)");
+            entity.HasIndex(c => c.Code).IsUnique();
         });
 
         // Rename Identity tables for cleaner naming
