@@ -7,6 +7,20 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// CORS
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularPolicy", policy =>
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials());
+});
+
 // Repository layer (DbContext + Identity + Repositories)
 builder.Services.AddRepositoryServices(builder.Configuration);
 
@@ -30,6 +44,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await db.Database.MigrateAsync();
     await DataSeeder.SeedRolesAsync(scope.ServiceProvider);
+    await DataSeeder.SeedUsersAsync(scope.ServiceProvider);
 }
 
 // Global exception handling
@@ -43,6 +58,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
+app.UseCors("AngularPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
