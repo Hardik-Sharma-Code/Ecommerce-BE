@@ -197,4 +197,9 @@ public class ProductRepository : IProductRepository
 
     public async Task<int> GetCountByCategoryAsync(int categoryId) =>
         await _context.Products.CountAsync(p => p.CategoryId == categoryId && p.IsActive);
+
+    public async Task DecrementStockAsync(int productId, int quantity) =>
+        await _context.Products
+            .Where(p => p.Id == productId && p.StockQuantity >= quantity)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.StockQuantity, p => p.StockQuantity - quantity));
 }

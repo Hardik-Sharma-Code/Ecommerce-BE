@@ -18,4 +18,5 @@ public interface IProductRepository
     Task<bool> SlugExistsAsync(string slug, int? excludeId = null);
     Task<bool> SkuExistsAsync(string sku, int? excludeId = null);
     Task<int> GetCountByCategoryAsync(int categoryId);
+    Task DecrementStockAsync(int productId, int quantity);
 }
