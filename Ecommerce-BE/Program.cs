@@ -1,4 +1,5 @@
 using Ecommerce_BE.Extensions;
+using Ecommerce_BE.Filters;
 using Ecommerce_BE.Middleware;
 using Ecommerce_BE.Repository.Data;
 using Ecommerce_BE.Repository.Extensions;
@@ -30,8 +31,12 @@ builder.Services.AddServiceLayer(builder.Configuration);
 // JWT Authentication + Authorization
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
-// Controllers
-builder.Services.AddControllers();
+// Controllers with global AuditLog filter
+builder.Services.AddScoped<AuditLogActionFilter>();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.AddService<AuditLogActionFilter>();
+});
 
 // Swagger with JWT support
 builder.Services.AddSwaggerWithJwt();
@@ -58,6 +63,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseCors("AngularPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
