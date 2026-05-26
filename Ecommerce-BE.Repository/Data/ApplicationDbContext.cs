@@ -25,6 +25,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Refund> Refunds => Set<Refund>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<FileRecord> FileRecords => Set<FileRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -285,6 +289,61 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                   .WithOne(o => o.Shipment)
                   .HasForeignKey<Shipment>(s => s.OrderId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Review>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Title).HasMaxLength(200).IsRequired();
+            entity.Property(r => r.Body).HasMaxLength(2000).IsRequired();
+            entity.HasOne(r => r.Product)
+                  .WithMany()
+                  .HasForeignKey(r => r.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(r => r.User)
+                  .WithMany()
+                  .HasForeignKey(r => r.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(r => new { r.UserId, r.ProductId }).IsUnique();
+        });
+
+        builder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(n => n.Id);
+            entity.Property(n => n.Title).HasMaxLength(200).IsRequired();
+            entity.Property(n => n.Message).HasMaxLength(1000).IsRequired();
+            entity.Property(n => n.RelatedEntityType).HasMaxLength(100);
+            entity.Property(n => n.RelatedEntityId).HasMaxLength(100);
+            entity.HasOne(n => n.User)
+                  .WithMany()
+                  .HasForeignKey(n => n.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.Action).HasMaxLength(100).IsRequired();
+            entity.Property(a => a.EntityType).HasMaxLength(100).IsRequired();
+            entity.Property(a => a.EntityId).HasMaxLength(100);
+            entity.Property(a => a.Description).HasMaxLength(1000);
+            entity.Property(a => a.IpAddress).HasMaxLength(50);
+            entity.Property(a => a.UserAgent).HasMaxLength(500);
+            entity.Property(a => a.UserId).HasMaxLength(450);
+            entity.Property(a => a.UserEmail).HasMaxLength(256);
+        });
+
+        builder.Entity<FileRecord>(entity =>
+        {
+            entity.HasKey(f => f.Id);
+            entity.Property(f => f.OriginalName).HasMaxLength(255).IsRequired();
+            entity.Property(f => f.StoredName).HasMaxLength(255).IsRequired();
+            entity.Property(f => f.RelativePath).HasMaxLength(500).IsRequired();
+            entity.Property(f => f.PublicUrl).HasMaxLength(500).IsRequired();
+            entity.Property(f => f.ContentType).HasMaxLength(100).IsRequired();
+            entity.Property(f => f.UploadedBy).HasMaxLength(450).IsRequired();
+            entity.Property(f => f.EntityType).HasMaxLength(100);
+            entity.Property(f => f.EntityId).HasMaxLength(100);
         });
 
         // Rename Identity tables for cleaner naming
