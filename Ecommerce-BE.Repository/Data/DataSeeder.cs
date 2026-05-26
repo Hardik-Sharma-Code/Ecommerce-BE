@@ -199,8 +199,9 @@ public static class DataSeeder
                 BusinessPhone = "+1-800-0201",
                 BusinessAddress = "10 Silicon Valley Blvd, San Jose, CA 95110",
                 KycStatus = KycStatus.Approved,
-                DocType = "GST", DocNumber = "GST-001-2024",
-                SubmittedAt = DateTime.UtcNow.AddDays(-30), ReviewedAt = DateTime.UtcNow.AddDays(-25)
+                DocType = (string?)"GST", DocNumber = (string?)"GST-001-2024",
+                SubmittedAt = (DateTime?)DateTime.UtcNow.AddDays(-30),
+                ReviewedAt  = (DateTime?)DateTime.UtcNow.AddDays(-25)
             },
             new
             {
@@ -211,8 +212,9 @@ public static class DataSeeder
                 BusinessPhone = "+1-800-0202",
                 BusinessAddress = "25 Fashion Ave, New York, NY 10018",
                 KycStatus = KycStatus.Submitted,
-                DocType = "PAN", DocNumber = "PAN-002-2024",
-                SubmittedAt = DateTime.UtcNow.AddDays(-5), ReviewedAt = (DateTime?)null
+                DocType = (string?)"PAN", DocNumber = (string?)"PAN-002-2024",
+                SubmittedAt = (DateTime?)DateTime.UtcNow.AddDays(-5),
+                ReviewedAt  = (DateTime?)null
             },
             new
             {
@@ -223,8 +225,9 @@ public static class DataSeeder
                 BusinessPhone = "+1-800-0203",
                 BusinessAddress = "50 Tech Park, Austin, TX 78701",
                 KycStatus = KycStatus.Approved,
-                DocType = "GST", DocNumber = "GST-003-2024",
-                SubmittedAt = DateTime.UtcNow.AddDays(-60), ReviewedAt = DateTime.UtcNow.AddDays(-55)
+                DocType = (string?)"GST", DocNumber = (string?)"GST-003-2024",
+                SubmittedAt = (DateTime?)DateTime.UtcNow.AddDays(-60),
+                ReviewedAt  = (DateTime?)DateTime.UtcNow.AddDays(-55)
             },
             new
             {
@@ -235,8 +238,9 @@ public static class DataSeeder
                 BusinessPhone = "+1-800-0204",
                 BusinessAddress = "99 Design Street, Portland, OR 97201",
                 KycStatus = KycStatus.Rejected,
-                DocType = "PAN", DocNumber = "PAN-004-2024",
-                SubmittedAt = DateTime.UtcNow.AddDays(-20), ReviewedAt = DateTime.UtcNow.AddDays(-15)
+                DocType = (string?)"PAN", DocNumber = (string?)"PAN-004-2024",
+                SubmittedAt = (DateTime?)DateTime.UtcNow.AddDays(-20),
+                ReviewedAt  = (DateTime?)DateTime.UtcNow.AddDays(-15)
             },
             new
             {
@@ -247,8 +251,9 @@ public static class DataSeeder
                 BusinessPhone = "+1-800-0205",
                 BusinessAddress = "77 Athletic Drive, Denver, CO 80201",
                 KycStatus = KycStatus.Pending,
-                DocType   = (string?)null, DocNumber = (string?)null,
-                SubmittedAt = (DateTime?)null, ReviewedAt = (DateTime?)null
+                DocType     = (string?)null, DocNumber = (string?)null,
+                SubmittedAt = (DateTime?)null,
+                ReviewedAt  = (DateTime?)null
             },
         };
 
