@@ -20,6 +20,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
     public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<Refund> Refunds => Set<Refund>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -186,6 +191,100 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(c => c.MinOrderAmount).HasColumnType("decimal(18,2)");
             entity.Property(c => c.MaxDiscountAmount).HasColumnType("decimal(18,2)");
             entity.HasIndex(c => c.Code).IsUnique();
+        });
+
+        builder.Entity<Order>(entity =>
+        {
+            entity.HasKey(o => o.Id);
+            entity.Property(o => o.OrderNumber).HasMaxLength(30).IsRequired();
+            entity.HasIndex(o => o.OrderNumber).IsUnique();
+            entity.Property(o => o.ShippingFirstName).HasMaxLength(100).IsRequired();
+            entity.Property(o => o.ShippingLastName).HasMaxLength(100).IsRequired();
+            entity.Property(o => o.ShippingPhone).HasMaxLength(20);
+            entity.Property(o => o.ShippingAddressLine1).HasMaxLength(250).IsRequired();
+            entity.Property(o => o.ShippingAddressLine2).HasMaxLength(250);
+            entity.Property(o => o.ShippingCity).HasMaxLength(100).IsRequired();
+            entity.Property(o => o.ShippingState).HasMaxLength(100).IsRequired();
+            entity.Property(o => o.ShippingPostalCode).HasMaxLength(20).IsRequired();
+            entity.Property(o => o.ShippingCountry).HasMaxLength(100).IsRequired();
+            entity.Property(o => o.Subtotal).HasColumnType("decimal(18,2)");
+            entity.Property(o => o.ShippingAmount).HasColumnType("decimal(18,2)");
+            entity.Property(o => o.DiscountAmount).HasColumnType("decimal(18,2)");
+            entity.Property(o => o.TaxAmount).HasColumnType("decimal(18,2)");
+            entity.Property(o => o.TotalAmount).HasColumnType("decimal(18,2)");
+            entity.Property(o => o.CouponCode).HasMaxLength(50);
+            entity.Property(o => o.CancellationReason).HasMaxLength(500);
+            entity.Property(o => o.Notes).HasMaxLength(500);
+            entity.HasOne(o => o.User)
+                  .WithMany()
+                  .HasForeignKey(o => o.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<OrderItem>(entity =>
+        {
+            entity.HasKey(oi => oi.Id);
+            entity.Property(oi => oi.ProductName).HasMaxLength(200).IsRequired();
+            entity.Property(oi => oi.SKU).HasMaxLength(100).IsRequired();
+            entity.Property(oi => oi.ImageUrl).HasMaxLength(500);
+            entity.Property(oi => oi.UnitPrice).HasColumnType("decimal(18,2)");
+            entity.Property(oi => oi.Subtotal).HasColumnType("decimal(18,2)");
+            entity.HasOne(oi => oi.Order)
+                  .WithMany(o => o.Items)
+                  .HasForeignKey(oi => oi.OrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            // SetNull keeps snapshot data even when product is deleted
+            entity.HasOne(oi => oi.Product)
+                  .WithMany()
+                  .HasForeignKey(oi => oi.ProductId)
+                  .OnDelete(DeleteBehavior.SetNull)
+                  .IsRequired(false);
+        });
+
+        builder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.GatewayOrderId).HasMaxLength(200);
+            entity.Property(p => p.GatewayPaymentId).HasMaxLength(200);
+            entity.Property(p => p.GatewaySignature).HasMaxLength(500);
+            entity.Property(p => p.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(p => p.Currency).HasMaxLength(10).IsRequired();
+            entity.Property(p => p.FailureReason).HasMaxLength(500);
+            entity.HasOne(p => p.Order)
+                  .WithOne(o => o.Payment)
+                  .HasForeignKey<Payment>(p => p.OrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Refund>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(r => r.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(r => r.GatewayRefundId).HasMaxLength(200);
+            entity.Property(r => r.Notes).HasMaxLength(500);
+            entity.HasOne(r => r.Order)
+                  .WithMany(o => o.Refunds)
+                  .HasForeignKey(r => r.OrderId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(r => r.Payment)
+                  .WithMany()
+                  .HasForeignKey(r => r.PaymentId)
+                  .OnDelete(DeleteBehavior.SetNull)
+                  .IsRequired(false);
+        });
+
+        builder.Entity<Shipment>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.Property(s => s.Carrier).HasMaxLength(100).IsRequired();
+            entity.Property(s => s.TrackingNumber).HasMaxLength(100);
+            entity.Property(s => s.TrackingUrl).HasMaxLength(500);
+            entity.Property(s => s.Notes).HasMaxLength(500);
+            entity.HasOne(s => s.Order)
+                  .WithOne(o => o.Shipment)
+                  .HasForeignKey<Shipment>(s => s.OrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Rename Identity tables for cleaner naming
