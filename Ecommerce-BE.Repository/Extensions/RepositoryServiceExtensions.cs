@@ -44,6 +44,10 @@ public static class RepositoryServiceExtensions
         services.AddScoped<IWishlistRepository, WishlistRepository>();
         services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<ICouponRepository, CouponRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IRefundRepository, RefundRepository>();
+        services.AddScoped<IShipmentRepository, ShipmentRepository>();
 
         return services;
     }

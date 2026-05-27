@@ -27,6 +27,25 @@ public static class ServiceLayerExtensions
         services.AddScoped<IAddressService, AddressService>();
         services.AddScoped<ICouponService, CouponService>();
 
+        services.Configure<RazorpaySettings>(configuration.GetSection("PaymentGateways:Razorpay"));
+        services.Configure<StripeSettings>(configuration.GetSection("PaymentGateways:Stripe"));
+        services.Configure<ShippingSettings>(configuration.GetSection("Shipping"));
+
+        services.AddHttpClient("Razorpay", client =>
+            client.BaseAddress = new Uri("https://api.razorpay.com/v1/"));
+        services.AddHttpClient("Stripe", client =>
+            client.BaseAddress = new Uri("https://api.stripe.com/v1/"));
+
+        // Register gateways as IPaymentGateway (IEnumerable<IPaymentGateway> enables factory resolution)
+        services.AddScoped<IPaymentGateway, RazorpayGateway>();
+        services.AddScoped<IPaymentGateway, StripeGateway>();
+        services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
+
+        services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<IRefundService, RefundService>();
+        services.AddScoped<IShippingService, ShippingService>();
+
         return services;
     }
 }
