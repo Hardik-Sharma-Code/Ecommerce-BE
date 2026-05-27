@@ -3,6 +3,7 @@ using Ecommerce_BE.Services.Interfaces;
 using Ecommerce_BE.Shared.Kernel.Common;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Http;
 
 namespace Ecommerce_BE.Services.Extensions;
 
@@ -45,6 +46,18 @@ public static class ServiceLayerExtensions
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IRefundService, RefundService>();
         services.AddScoped<IShippingService, ShippingService>();
+
+        services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<IFileService, FileService>();
+        services.AddScoped<IEmailService, StubEmailService>();
+        services.AddScoped<ISmsService, StubSmsService>();
+
+        services.Configure<FileUploadSettings>(configuration.GetSection("FileUpload"));
+        services.AddHttpContextAccessor();
 
         return services;
     }

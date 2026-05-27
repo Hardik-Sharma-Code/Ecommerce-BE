@@ -2,6 +2,16 @@ namespace Ecommerce_BE.Shared.Kernel.Common;
 
 public class PagedResult<T>
 {
+    public PagedResult() { }
+
+    public PagedResult(IEnumerable<T> items, int totalCount, int page, int pageSize)
+    {
+        Items = items;
+        TotalCount = totalCount;
+        Page = page;
+        PageSize = pageSize;
+    }
+
     public IEnumerable<T> Items { get; set; } = Enumerable.Empty<T>();
     public int TotalCount { get; set; }
     public int Page { get; set; }
@@ -9,4 +19,7 @@ public class PagedResult<T>
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
     public bool HasPreviousPage => Page > 1;
     public bool HasNextPage => Page < TotalPages;
+
+    public PagedResult<TResult> Map<TResult>(Func<T, TResult> selector) =>
+        new(Items.Select(selector), TotalCount, Page, PageSize);
 }
