@@ -38,6 +38,8 @@ public static class RepositoryServiceExtensions
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IVendorRepository, VendorRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
 
         return services;
     }

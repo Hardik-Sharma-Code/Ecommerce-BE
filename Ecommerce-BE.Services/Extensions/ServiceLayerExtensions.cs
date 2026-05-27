@@ -19,6 +19,9 @@ public static class ServiceLayerExtensions
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IVendorService, VendorService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<ISearchService, SearchService>();
 
         return services;
     }
