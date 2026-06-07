@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Ecommerce_BE.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/categories")]
 [Produces("application/json")]
 public class CategoryController : ControllerBase
 {

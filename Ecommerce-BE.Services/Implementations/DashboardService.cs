@@ -40,16 +40,16 @@ public class DashboardService : IDashboardService
             .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
         var revenueToday = await _context.Orders
-            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.CreatedAt >= todayStart)
+            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.PlacedAt >= todayStart)
             .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
         var revenueThisMonth = await _context.Orders
-            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.CreatedAt >= monthStart)
+            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.PlacedAt >= monthStart)
             .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
         var recentOrders = await _context.Orders
             .Include(o => o.User)
-            .OrderByDescending(o => o.CreatedAt)
+            .OrderByDescending(o => o.PlacedAt)
             .Take(5)
             .Select(o => new RecentOrderDto
             {
@@ -58,7 +58,7 @@ public class DashboardService : IDashboardService
                 CustomerEmail = o.User.Email ?? string.Empty,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status.ToString(),
-                CreatedAt = o.CreatedAt
+                CreatedAt = o.PlacedAt
             })
             .ToListAsync();
 
@@ -121,7 +121,7 @@ public class DashboardService : IDashboardService
             .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
         var revenueThisMonth = await vendorOrders
-            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.CreatedAt >= monthStart)
+            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.PlacedAt >= monthStart)
             .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
         var ratings = await _context.Reviews
@@ -133,7 +133,7 @@ public class DashboardService : IDashboardService
 
         var recentOrders = await vendorOrders
             .Include(o => o.User)
-            .OrderByDescending(o => o.CreatedAt)
+            .OrderByDescending(o => o.PlacedAt)
             .Take(5)
             .Select(o => new RecentOrderDto
             {
@@ -142,7 +142,7 @@ public class DashboardService : IDashboardService
                 CustomerEmail = o.User.Email ?? string.Empty,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status.ToString(),
-                CreatedAt = o.CreatedAt
+                CreatedAt = o.PlacedAt
             })
             .ToListAsync();
 

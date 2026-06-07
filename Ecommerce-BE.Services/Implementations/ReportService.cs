@@ -20,7 +20,7 @@ public class ReportService : IReportService
         var to = request.ToDate.Date.AddDays(1);
 
         var ordersQuery = _context.Orders
-            .Where(o => o.CreatedAt >= from && o.CreatedAt < to && o.PaymentStatus == PaymentStatus.Paid);
+            .Where(o => o.PlacedAt >= from && o.PlacedAt < to && o.PaymentStatus == PaymentStatus.Paid);
 
         if (!string.IsNullOrEmpty(request.VendorId))
         {
@@ -35,7 +35,7 @@ public class ReportService : IReportService
         var orders = await ordersQuery.ToListAsync();
 
         var dailyBreakdown = orders
-            .GroupBy(o => o.CreatedAt.Date)
+            .GroupBy(o => o.PlacedAt.Date)
             .Select(g => new DailySalesDto
             {
                 Date = g.Key,
