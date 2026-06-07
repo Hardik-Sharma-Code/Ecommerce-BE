@@ -40,17 +40,17 @@ public class DashboardService : IDashboardService
             .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
         var revenueToday = await _context.Orders
-            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.CreatedAt >= todayStart)
+            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.PlacedAt >= todayStart)
             .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
         var revenueThisMonth = await _context.Orders
-            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.CreatedAt >= monthStart)
+            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.PlacedAt >= monthStart)
             .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
         // Materialize before calling .ToString() on enum — EF Core cannot translate it to SQL
         var recentOrdersRaw = await _context.Orders
             .Include(o => o.User)
-            .OrderByDescending(o => o.CreatedAt)
+            .OrderByDescending(o => o.PlacedAt)
             .Take(5)
             .Select(o => new { o.Id, o.OrderNumber, CustomerEmail = o.User.Email ?? string.Empty, o.TotalAmount, o.Status, o.CreatedAt })
             .ToListAsync();
@@ -143,7 +143,7 @@ public class DashboardService : IDashboardService
         // Materialize before calling .ToString() on enum
         var recentOrdersRaw = await vendorOrders
             .Include(o => o.User)
-            .OrderByDescending(o => o.CreatedAt)
+            .OrderByDescending(o => o.PlacedAt)
             .Take(5)
             .Select(o => new { o.Id, o.OrderNumber, CustomerEmail = o.User.Email ?? string.Empty, o.TotalAmount, o.Status, o.CreatedAt })
             .ToListAsync();
