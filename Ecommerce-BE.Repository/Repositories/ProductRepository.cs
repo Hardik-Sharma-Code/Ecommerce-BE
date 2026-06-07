@@ -19,6 +19,7 @@ public class ProductRepository : IProductRepository
     {
         var query = _context.Products
             .Include(p => p.Category)
+            .Include(p => p.Vendor)
             .AsNoTracking();
 
         if (includeImages)
@@ -30,6 +31,7 @@ public class ProductRepository : IProductRepository
     public async Task<Product?> GetBySlugAsync(string slug) =>
         await _context.Products
             .Include(p => p.Category)
+            .Include(p => p.Vendor)
             .Include(p => p.Images.OrderBy(i => i.SortOrder))
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Slug == slug);
@@ -75,7 +77,7 @@ public class ProductRepository : IProductRepository
     }
 
     public async Task<(IEnumerable<Product> Products, int TotalCount)> GetByVendorAsync(
-        string vendorId, int page, int pageSize)
+        int vendorId, int page, int pageSize)
     {
         var query = _context.Products
             .Include(p => p.Category)
@@ -114,8 +116,8 @@ public class ProductRepository : IProductRepository
         if (request.CategoryId.HasValue)
             query = query.Where(p => p.CategoryId == request.CategoryId.Value);
 
-        if (!string.IsNullOrWhiteSpace(request.VendorId))
-            query = query.Where(p => p.VendorId == request.VendorId);
+        if (request.VendorId.HasValue)
+            query = query.Where(p => p.VendorId == request.VendorId.Value);
 
         if (request.MinPrice.HasValue)
             query = query.Where(p => p.Price >= request.MinPrice.Value);

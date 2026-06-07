@@ -9,7 +9,7 @@ public interface IProductRepository
     Task<Product?> GetBySlugAsync(string slug);
     Task<(IEnumerable<Product> Products, int TotalCount)> GetAllAsync(int page, int pageSize, bool activeOnly = true);
     Task<(IEnumerable<Product> Products, int TotalCount)> GetByCategoryAsync(int categoryId, int page, int pageSize);
-    Task<(IEnumerable<Product> Products, int TotalCount)> GetByVendorAsync(string vendorId, int page, int pageSize);
+    Task<(IEnumerable<Product> Products, int TotalCount)> GetByVendorAsync(int vendorId, int page, int pageSize);
     Task<(IEnumerable<Product> Products, int TotalCount)> SearchAsync(ProductSearchRequestDto request);
     Task<IEnumerable<string>> GetNameSuggestionsAsync(string query, int limit = 10);
     Task<Product> CreateAsync(Product product);

@@ -63,10 +63,10 @@ public class ProductController : ControllerBase
     }
 
     /// <summary>Get products by vendor</summary>
-    [HttpGet("vendor/{vendorId}")]
+    [HttpGet("vendor/{vendorId:int}")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<ProductListDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetByVendor(
-        string vendorId,
+        int vendorId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {

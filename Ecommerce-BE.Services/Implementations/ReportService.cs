@@ -19,52 +19,89 @@ public class ReportService : IReportService
         var from = request.FromDate.Date;
         var to = request.ToDate.Date.AddDays(1);
 
-        var ordersQuery = _context.Orders
-            .Where(o => o.PlacedAt >= from && o.PlacedAt < to && o.PaymentStatus == PaymentStatus.Paid);
-
-        if (!string.IsNullOrEmpty(request.VendorId))
+        if (request.VendorId.HasValue)
         {
+            // Vendor report: sum only items belonging to this vendor, not the full order amount
+            var vendorId = request.VendorId.Value;
+
             var vendorProductIds = await _context.Products
-                .Where(p => p.VendorId == request.VendorId)
+                .Where(p => p.VendorId == vendorId)
                 .Select(p => p.Id)
                 .ToListAsync();
 
-            ordersQuery = ordersQuery.Where(o => o.Items.Any(i => i.ProductId != null && vendorProductIds.Contains(i.ProductId!.Value)));
-        }
+            var vendorItems = await _context.OrderItems
+                .Where(oi => oi.ProductId != null
+                          && vendorProductIds.Contains(oi.ProductId!.Value)
+                          && oi.Order.CreatedAt >= from
+                          && oi.Order.CreatedAt < to
+                          && oi.Order.PaymentStatus == PaymentStatus.Paid)
+                .Select(oi => new { oi.Order.CreatedAt, oi.Subtotal })
+                .ToListAsync();
 
-        var orders = await ordersQuery.ToListAsync();
+            var dailyBreakdown = vendorItems
+                .GroupBy(i => i.CreatedAt.Date)
+                .Select(g => new DailySalesDto
+                {
+                    Date = g.Key,
+                    OrderCount = g.Count(),
+                    Revenue = g.Sum(i => i.Subtotal)
+                })
+                .OrderBy(d => d.Date)
+                .ToList();
 
-        var dailyBreakdown = orders
-            .GroupBy(o => o.PlacedAt.Date)
-            .Select(g => new DailySalesDto
+            var dto = new SalesReportDto
             {
-                Date = g.Key,
-                OrderCount = g.Count(),
-                Revenue = g.Sum(o => o.TotalAmount)
-            })
-            .OrderBy(d => d.Date)
-            .ToList();
+                FromDate = request.FromDate,
+                ToDate = request.ToDate,
+                TotalOrders = dailyBreakdown.Sum(d => d.OrderCount),
+                TotalRevenue = vendorItems.Sum(i => i.Subtotal),
+                TotalDiscount = 0,
+                TotalTax = 0,
+                NetRevenue = vendorItems.Sum(i => i.Subtotal),
+                DailyBreakdown = dailyBreakdown
+            };
 
-        var dto = new SalesReportDto
+            return ApiResponse<SalesReportDto>.Ok(dto);
+        }
+        else
         {
-            FromDate = request.FromDate,
-            ToDate = request.ToDate,
-            TotalOrders = orders.Count,
-            TotalRevenue = orders.Sum(o => o.TotalAmount),
-            TotalDiscount = orders.Sum(o => o.DiscountAmount),
-            TotalTax = orders.Sum(o => o.TaxAmount),
-            NetRevenue = orders.Sum(o => o.TotalAmount - o.TaxAmount),
-            DailyBreakdown = dailyBreakdown
-        };
+            // Admin report: full order view
+            var orders = await _context.Orders
+                .Where(o => o.CreatedAt >= from && o.CreatedAt < to && o.PaymentStatus == PaymentStatus.Paid)
+                .ToListAsync();
 
-        return ApiResponse<SalesReportDto>.Ok(dto);
+            var dailyBreakdown = orders
+                .GroupBy(o => o.CreatedAt.Date)
+                .Select(g => new DailySalesDto
+                {
+                    Date = g.Key,
+                    OrderCount = g.Count(),
+                    Revenue = g.Sum(o => o.TotalAmount)
+                })
+                .OrderBy(d => d.Date)
+                .ToList();
+
+            var dto = new SalesReportDto
+            {
+                FromDate = request.FromDate,
+                ToDate = request.ToDate,
+                TotalOrders = orders.Count,
+                TotalRevenue = orders.Sum(o => o.TotalAmount),
+                TotalDiscount = orders.Sum(o => o.DiscountAmount),
+                TotalTax = orders.Sum(o => o.TaxAmount),
+                NetRevenue = orders.Sum(o => o.TotalAmount - o.TaxAmount),
+                DailyBreakdown = dailyBreakdown
+            };
+
+            return ApiResponse<SalesReportDto>.Ok(dto);
+        }
     }
 
-    public async Task<ApiResponse<InventoryReportDto>> GetInventoryReportAsync(string? vendorId = null)
+    public async Task<ApiResponse<InventoryReportDto>> GetInventoryReportAsync(int? vendorId = null)
     {
         var query = _context.Products.AsQueryable();
-        if (!string.IsNullOrEmpty(vendorId))
-            query = query.Where(p => p.VendorId == vendorId);
+        if (vendorId.HasValue)
+            query = query.Where(p => p.VendorId == vendorId.Value);
 
         var products = await query.AsNoTracking().ToListAsync();
 
@@ -111,7 +148,7 @@ public class ReportService : IReportService
         return ApiResponse<byte[]>.Ok(Encoding.UTF8.GetBytes(sb.ToString()));
     }
 
-    public async Task<ApiResponse<byte[]>> ExportInventoryReportCsvAsync(string? vendorId = null)
+    public async Task<ApiResponse<byte[]>> ExportInventoryReportCsvAsync(int? vendorId = null)
     {
         var report = (await GetInventoryReportAsync(vendorId)).Data!;
 

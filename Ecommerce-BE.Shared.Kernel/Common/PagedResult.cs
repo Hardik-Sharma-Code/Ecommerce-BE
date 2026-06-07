@@ -16,10 +16,13 @@ public class PagedResult<T>
     public int TotalCount { get; set; }
     public int Page { get; set; }
     public int PageSize { get; set; }
-    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+
+    // Fix #5: guard against PageSize=0 to avoid silent corrupt values
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
     public bool HasPreviousPage => Page > 1;
     public bool HasNextPage => Page < TotalPages;
 
+    // Materialise the projected items so callers don't hold a live IEnumerable over a disposed DbContext
     public PagedResult<TResult> Map<TResult>(Func<T, TResult> selector) =>
-        new(Items.Select(selector), TotalCount, Page, PageSize);
+        new(Items.Select(selector).ToList(), TotalCount, Page, PageSize);
 }

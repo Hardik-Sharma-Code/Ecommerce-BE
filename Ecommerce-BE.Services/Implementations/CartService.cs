@@ -88,6 +88,10 @@ public class CartService : ICartService
         }
         else
         {
+            // Fix #2: reject negative quantities before the stock check (StockQty < negative always passes)
+            if (dto.Quantity < 1)
+                return ApiResponse<CartDto>.Fail("Quantity must be at least 1.");
+
             var product = await _productRepository.GetByIdAsync(item.ProductId);
             if (product is not null && product.StockQuantity < dto.Quantity)
                 return ApiResponse<CartDto>.Fail($"Only {product.StockQuantity} units in stock.");

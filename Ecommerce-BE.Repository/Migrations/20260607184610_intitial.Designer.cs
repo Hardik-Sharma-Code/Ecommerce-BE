@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Ecommerce_BE.Repository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260527122428_Intitial")]
-    partial class Intitial
+    [Migration("20260607184610_intitial")]
+    partial class intitial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -575,6 +575,9 @@ namespace Ecommerce_BE.Repository.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -830,9 +833,8 @@ namespace Ecommerce_BE.Repository.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("VendorId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("VendorId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1410,13 +1412,15 @@ namespace Ecommerce_BE.Repository.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Ecommerce_BE.Shared.Kernel.Models.ApplicationUser", null)
+                    b.HasOne("Ecommerce_BE.Shared.Kernel.Models.VendorProfile", "Vendor")
                         .WithMany()
                         .HasForeignKey("VendorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Category");
+
+                    b.Navigation("Vendor");
                 });
 
             modelBuilder.Entity("Ecommerce_BE.Shared.Kernel.Models.ProductImage", b =>

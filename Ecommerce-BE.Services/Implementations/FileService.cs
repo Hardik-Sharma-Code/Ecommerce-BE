@@ -30,7 +30,9 @@ public class FileService : IFileService
             return ApiResponse<FileRecordDto>.Fail($"File size exceeds the maximum allowed size of {_settings.MaxFileSizeBytes / (1024 * 1024)} MB");
 
         var allowed = _settings.AllowedImageTypes.Concat(_settings.AllowedDocumentTypes).ToArray();
-        if (!allowed.Contains(file.ContentType.ToLower()))
+        // Fix #7: strip MIME parameters (e.g. "image/jpeg; charset=utf-8" → "image/jpeg") before comparing
+        var mimeType = file.ContentType.Split(';')[0].Trim().ToLower();
+        if (!allowed.Contains(mimeType))
             return ApiResponse<FileRecordDto>.Fail("File type not allowed");
 
         var ext = Path.GetExtension(file.FileName);

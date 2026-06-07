@@ -13,6 +13,7 @@ public class Product
     public int CategoryId { get; set; }
     public Category Category { get; set; } = null!;
     public int VendorId { get; set; }
+    public VendorProfile Vendor { get; set; } = null!;
     public int StockQuantity { get; set; } = 0;
     public int LowStockThreshold { get; set; } = 5;
     public bool IsActive { get; set; } = true;

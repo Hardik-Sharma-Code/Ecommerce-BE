@@ -6,5 +6,5 @@ namespace Ecommerce_BE.Services.Interfaces;
 public interface IDashboardService
 {
     Task<ApiResponse<AdminDashboardDto>> GetAdminDashboardAsync();
-    Task<ApiResponse<VendorDashboardDto>> GetVendorDashboardAsync(string vendorId);
+    Task<ApiResponse<VendorDashboardDto>> GetVendorDashboardAsync(int vendorProfileId);
 }

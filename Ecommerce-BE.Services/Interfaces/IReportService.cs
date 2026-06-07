@@ -6,7 +6,7 @@ namespace Ecommerce_BE.Services.Interfaces;
 public interface IReportService
 {
     Task<ApiResponse<SalesReportDto>> GetSalesReportAsync(ReportRequestDto request);
-    Task<ApiResponse<InventoryReportDto>> GetInventoryReportAsync(string? vendorId = null);
+    Task<ApiResponse<InventoryReportDto>> GetInventoryReportAsync(int? vendorId = null);
     Task<ApiResponse<byte[]>> ExportSalesReportCsvAsync(ReportRequestDto request);
-    Task<ApiResponse<byte[]>> ExportInventoryReportCsvAsync(string? vendorId = null);
+    Task<ApiResponse<byte[]>> ExportInventoryReportCsvAsync(int? vendorId = null);
 }

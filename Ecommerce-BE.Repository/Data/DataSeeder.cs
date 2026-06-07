@@ -37,7 +37,7 @@ public static class DataSeeder
 
         await SeedAdminsAsync(userManager, logger);
         await SeedCustomersAsync(userManager, context, logger);
-        await SeedVendorsAsync(userManager, context, logger);
+        //await SeedVendorsAsync(userManager, context, logger);
     }
 
     // -------------------------------------------------------------------------

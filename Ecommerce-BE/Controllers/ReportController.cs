@@ -13,17 +13,22 @@ namespace Ecommerce_BE.Controllers;
 public class ReportController : ControllerBase
 {
     private readonly IReportService _reportService;
+    private readonly IVendorService _vendorService;
 
-    public ReportController(IReportService reportService) => _reportService = reportService;
+    public ReportController(IReportService reportService, IVendorService vendorService)
+    {
+        _reportService = reportService;
+        _vendorService = vendorService;
+    }
 
     [HttpPost("sales")]
     public async Task<IActionResult> GetSalesReport([FromBody] ReportRequestDto request)
     {
-        var isAdmin = User.IsInRole(Roles.Admin);
-        if (!isAdmin)
+        if (!User.IsInRole(Roles.Admin))
         {
-            // Vendor can only see their own data
-            request.VendorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var vendorProfileId = await ResolveVendorProfileIdAsync();
+            if (vendorProfileId is null) return BadRequest("Vendor profile not found.");
+            request.VendorId = vendorProfileId;
         }
 
         var result = await _reportService.GetSalesReportAsync(request);
@@ -33,8 +38,13 @@ public class ReportController : ControllerBase
     [HttpGet("inventory")]
     public async Task<IActionResult> GetInventoryReport()
     {
-        var isAdmin = User.IsInRole(Roles.Admin);
-        var vendorId = isAdmin ? null : User.FindFirstValue(ClaimTypes.NameIdentifier);
+        int? vendorId = null;
+        if (!User.IsInRole(Roles.Admin))
+        {
+            vendorId = await ResolveVendorProfileIdAsync();
+            if (vendorId is null) return BadRequest("Vendor profile not found.");
+        }
+
         var result = await _reportService.GetInventoryReportAsync(vendorId);
         return Ok(result);
     }
@@ -42,9 +52,12 @@ public class ReportController : ControllerBase
     [HttpPost("sales/export")]
     public async Task<IActionResult> ExportSalesReport([FromBody] ReportRequestDto request)
     {
-        var isAdmin = User.IsInRole(Roles.Admin);
-        if (!isAdmin)
-            request.VendorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!User.IsInRole(Roles.Admin))
+        {
+            var vendorProfileId = await ResolveVendorProfileIdAsync();
+            if (vendorProfileId is null) return BadRequest("Vendor profile not found.");
+            request.VendorId = vendorProfileId;
+        }
 
         var result = await _reportService.ExportSalesReportCsvAsync(request);
         if (!result.Success) return BadRequest(result);
@@ -56,11 +69,23 @@ public class ReportController : ControllerBase
     [HttpGet("inventory/export")]
     public async Task<IActionResult> ExportInventoryReport()
     {
-        var isAdmin = User.IsInRole(Roles.Admin);
-        var vendorId = isAdmin ? null : User.FindFirstValue(ClaimTypes.NameIdentifier);
+        int? vendorId = null;
+        if (!User.IsInRole(Roles.Admin))
+        {
+            vendorId = await ResolveVendorProfileIdAsync();
+            if (vendorId is null) return BadRequest("Vendor profile not found.");
+        }
+
         var result = await _reportService.ExportInventoryReportCsvAsync(vendorId);
         if (!result.Success) return BadRequest(result);
 
         return File(result.Data!, "text/csv", "inventory-report.csv");
+    }
+
+    private async Task<int?> ResolveVendorProfileIdAsync()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var profile = await _vendorService.GetProfileAsync(userId);
+        return profile.Success ? profile.Data!.Id : null;
     }
 }

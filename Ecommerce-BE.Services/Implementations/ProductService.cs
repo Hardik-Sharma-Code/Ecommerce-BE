@@ -3,7 +3,6 @@ using Ecommerce_BE.Services.Interfaces;
 using Ecommerce_BE.Shared.Kernel.Common;
 using Ecommerce_BE.Shared.Kernel.DTOs.Product;
 using Ecommerce_BE.Shared.Kernel.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Ecommerce_BE.Services.Implementations;
@@ -12,18 +11,18 @@ public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
     private readonly ICategoryRepository _categoryRepository;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IVendorRepository _vendorRepository;
     private readonly ILogger<ProductService> _logger;
 
     public ProductService(
         IProductRepository productRepository,
         ICategoryRepository categoryRepository,
-        UserManager<ApplicationUser> userManager,
+        IVendorRepository vendorRepository,
         ILogger<ProductService> logger)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
-        _userManager = userManager;
+        _vendorRepository = vendorRepository;
         _logger = logger;
     }
 
@@ -39,7 +38,7 @@ public class ProductService : IProductService
         if (product is null)
             return ApiResponse<ProductDto>.Fail("Product not found.");
 
-        return ApiResponse<ProductDto>.Ok(await MapToDtoAsync(product));
+        return ApiResponse<ProductDto>.Ok(MapToDto(product));
     }
 
     public async Task<ApiResponse<ProductDto>> GetBySlugAsync(string slug)
@@ -48,7 +47,7 @@ public class ProductService : IProductService
         if (product is null)
             return ApiResponse<ProductDto>.Fail("Product not found.");
 
-        return ApiResponse<ProductDto>.Ok(await MapToDtoAsync(product));
+        return ApiResponse<ProductDto>.Ok(MapToDto(product));
     }
 
     public async Task<ApiResponse<PagedResult<ProductListDto>>> GetByCategoryAsync(
@@ -63,14 +62,18 @@ public class ProductService : IProductService
     }
 
     public async Task<ApiResponse<PagedResult<ProductListDto>>> GetByVendorAsync(
-        string vendorId, int page, int pageSize)
+        int vendorId, int page, int pageSize)
     {
         var (products, total) = await _productRepository.GetByVendorAsync(vendorId, page, pageSize);
         return ApiResponse<PagedResult<ProductListDto>>.Ok(ToPagedResult(products, total, page, pageSize));
     }
 
-    public async Task<ApiResponse<ProductDto>> CreateAsync(string vendorId, CreateProductDto dto)
+    public async Task<ApiResponse<ProductDto>> CreateAsync(string userId, CreateProductDto dto)
     {
+        var vendorProfile = await _vendorRepository.GetByUserIdAsync(userId);
+        if (vendorProfile is null)
+            return ApiResponse<ProductDto>.Fail("Vendor profile not found.");
+
         var category = await _categoryRepository.GetByIdAsync(dto.CategoryId);
         if (category is null)
             return ApiResponse<ProductDto>.Fail("Category not found.");
@@ -90,7 +93,7 @@ public class ProductService : IProductService
             Price = dto.Price,
             CompareAtPrice = dto.CompareAtPrice,
             CategoryId = dto.CategoryId,
-            VendorId = vendorId,
+            VendorId = vendorProfile.Id,
             StockQuantity = dto.StockQuantity,
             LowStockThreshold = dto.LowStockThreshold,
             IsFeatured = dto.IsFeatured,
@@ -106,8 +109,8 @@ public class ProductService : IProductService
         };
 
         var created = await _productRepository.CreateAsync(product);
-        _logger.LogInformation("Product created: {Name} (Id: {Id}) by vendor {VendorId}", created.Name, created.Id, vendorId);
-        return ApiResponse<ProductDto>.Ok(await MapToDtoAsync(created), "Product created successfully.");
+        _logger.LogInformation("Product created: {Name} (Id: {Id}) by vendor profile {VendorId}", created.Name, created.Id, vendorProfile.Id);
+        return ApiResponse<ProductDto>.Ok(MapToDto(created, vendorProfile), "Product created successfully.");
     }
 
     public async Task<ApiResponse<ProductDto>> UpdateAsync(
@@ -117,8 +120,12 @@ public class ProductService : IProductService
         if (product is null)
             return ApiResponse<ProductDto>.Fail("Product not found.");
 
-        if (userRole == Roles.Vendor && product.VendorId != userId)
-            return ApiResponse<ProductDto>.Fail("You are not authorized to update this product.");
+        if (userRole == Roles.Vendor)
+        {
+            var vendorProfile = await _vendorRepository.GetByUserIdAsync(userId);
+            if (vendorProfile is null || product.VendorId != vendorProfile.Id)
+                return ApiResponse<ProductDto>.Fail("You are not authorized to update this product.");
+        }
 
         var category = await _categoryRepository.GetByIdAsync(dto.CategoryId);
         if (category is null)
@@ -156,7 +163,7 @@ public class ProductService : IProductService
 
         var updated = await _productRepository.UpdateAsync(product);
         _logger.LogInformation("Product updated: {Name} (Id: {Id})", updated.Name, updated.Id);
-        return ApiResponse<ProductDto>.Ok(await MapToDtoAsync(updated));
+        return ApiResponse<ProductDto>.Ok(MapToDto(updated));
     }
 
     public async Task<ApiResponse> DeleteAsync(int id, string userId, string userRole)
@@ -165,8 +172,12 @@ public class ProductService : IProductService
         if (product is null)
             return ApiResponse.Fail("Product not found.");
 
-        if (userRole == Roles.Vendor && product.VendorId != userId)
-            return ApiResponse.Fail("You are not authorized to delete this product.");
+        if (userRole == Roles.Vendor)
+        {
+            var vendorProfile = await _vendorRepository.GetByUserIdAsync(userId);
+            if (vendorProfile is null || product.VendorId != vendorProfile.Id)
+                return ApiResponse.Fail("You are not authorized to delete this product.");
+        }
 
         await _productRepository.DeleteAsync(product);
         _logger.LogInformation("Product deleted: Id {Id}", id);
@@ -189,8 +200,12 @@ public class ProductService : IProductService
         if (product is null)
             return ApiResponse<StockInfoDto>.Fail("Product not found.");
 
-        if (userRole == Roles.Vendor && product.VendorId != userId)
-            return ApiResponse<StockInfoDto>.Fail("You are not authorized to update stock for this product.");
+        if (userRole == Roles.Vendor)
+        {
+            var vendorProfile = await _vendorRepository.GetByUserIdAsync(userId);
+            if (vendorProfile is null || product.VendorId != vendorProfile.Id)
+                return ApiResponse<StockInfoDto>.Fail("You are not authorized to update stock for this product.");
+        }
 
         product.StockQuantity = dto.StockQuantity;
         if (dto.LowStockThreshold.HasValue)
@@ -214,9 +229,9 @@ public class ProductService : IProductService
         return slug;
     }
 
-    private async Task<ProductDto> MapToDtoAsync(Product p)
+    private static ProductDto MapToDto(Product p, VendorProfile? vendorOverride = null)
     {
-        var vendor = await _userManager.FindByIdAsync(p.VendorId);
+        var vendor = vendorOverride ?? p.Vendor;
         return new ProductDto
         {
             Id = p.Id,
@@ -230,7 +245,7 @@ public class ProductService : IProductService
             CategoryId = p.CategoryId,
             CategoryName = p.Category?.Name ?? string.Empty,
             VendorId = p.VendorId,
-            VendorName = vendor is not null ? $"{vendor.FirstName} {vendor.LastName}" : string.Empty,
+            VendorName = vendor?.BusinessName ?? string.Empty,
             StockQuantity = p.StockQuantity,
             LowStockThreshold = p.LowStockThreshold,
             IsActive = p.IsActive,

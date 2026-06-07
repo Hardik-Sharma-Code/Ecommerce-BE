@@ -12,8 +12,13 @@ namespace Ecommerce_BE.Controllers;
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;
+    private readonly IVendorService _vendorService;
 
-    public DashboardController(IDashboardService dashboardService) => _dashboardService = dashboardService;
+    public DashboardController(IDashboardService dashboardService, IVendorService vendorService)
+    {
+        _dashboardService = dashboardService;
+        _vendorService = vendorService;
+    }
 
     [HttpGet("admin")]
     [Authorize(Roles = Roles.Admin)]
@@ -27,8 +32,12 @@ public class DashboardController : ControllerBase
     [Authorize(Roles = Roles.Vendor)]
     public async Task<IActionResult> GetVendorDashboard()
     {
-        var vendorId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _dashboardService.GetVendorDashboardAsync(vendorId);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var profileResult = await _vendorService.GetProfileAsync(userId);
+        if (!profileResult.Success)
+            return BadRequest(profileResult);
+
+        var result = await _dashboardService.GetVendorDashboardAsync(profileResult.Data!.Id);
         return Ok(result);
     }
 }

@@ -10,5 +10,5 @@ public class ReportRequestDto
     [Required]
     public DateTime ToDate { get; set; }
 
-    public string? VendorId { get; set; }
+    public int? VendorId { get; set; }
 }
