@@ -137,6 +137,7 @@ public class VendorService : IVendorService
 
     private static VendorProfileDto MapToDto(ApplicationUser user, VendorProfile profile) => new()
     {
+        Id = profile.Id,
         UserId = user.Id,
         FirstName = user.FirstName,
         LastName = user.LastName,

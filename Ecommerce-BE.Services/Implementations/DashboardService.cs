@@ -47,20 +47,23 @@ public class DashboardService : IDashboardService
             .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.CreatedAt >= monthStart)
             .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
-        var recentOrders = await _context.Orders
+        // Materialize before calling .ToString() on enum — EF Core cannot translate it to SQL
+        var recentOrdersRaw = await _context.Orders
             .Include(o => o.User)
             .OrderByDescending(o => o.CreatedAt)
             .Take(5)
-            .Select(o => new RecentOrderDto
-            {
-                OrderId = o.Id,
-                OrderNumber = o.OrderNumber,
-                CustomerEmail = o.User.Email ?? string.Empty,
-                TotalAmount = o.TotalAmount,
-                Status = o.Status.ToString(),
-                CreatedAt = o.CreatedAt
-            })
+            .Select(o => new { o.Id, o.OrderNumber, CustomerEmail = o.User.Email ?? string.Empty, o.TotalAmount, o.Status, o.CreatedAt })
             .ToListAsync();
+
+        var recentOrders = recentOrdersRaw.Select(o => new RecentOrderDto
+        {
+            OrderId = o.Id,
+            OrderNumber = o.OrderNumber,
+            CustomerEmail = o.CustomerEmail,
+            TotalAmount = o.TotalAmount,
+            Status = o.Status.ToString(),
+            CreatedAt = o.CreatedAt
+        }).ToList();
 
         var topProducts = await _context.OrderItems
             .Where(oi => oi.ProductId != null)
@@ -96,17 +99,17 @@ public class DashboardService : IDashboardService
         return ApiResponse<AdminDashboardDto>.Ok(dto);
     }
 
-    public async Task<ApiResponse<VendorDashboardDto>> GetVendorDashboardAsync(string vendorId)
+    public async Task<ApiResponse<VendorDashboardDto>> GetVendorDashboardAsync(int vendorProfileId)
     {
         var now = DateTime.UtcNow;
         var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var totalProducts = await _context.Products.CountAsync(p => p.VendorId == vendorId);
-        var activeProducts = await _context.Products.CountAsync(p => p.VendorId == vendorId && p.IsActive);
-        var lowStockProducts = await _context.Products.CountAsync(p => p.VendorId == vendorId && p.IsActive && p.StockQuantity > 0 && p.StockQuantity <= p.LowStockThreshold);
+        var totalProducts = await _context.Products.CountAsync(p => p.VendorId == vendorProfileId);
+        var activeProducts = await _context.Products.CountAsync(p => p.VendorId == vendorProfileId && p.IsActive);
+        var lowStockProducts = await _context.Products.CountAsync(p => p.VendorId == vendorProfileId && p.IsActive && p.StockQuantity > 0 && p.StockQuantity <= p.LowStockThreshold);
 
         var vendorProductIds = await _context.Products
-            .Where(p => p.VendorId == vendorId)
+            .Where(p => p.VendorId == vendorProfileId)
             .Select(p => p.Id)
             .ToListAsync();
 
@@ -116,13 +119,19 @@ public class DashboardService : IDashboardService
         var totalOrders = await vendorOrders.CountAsync();
         var pendingOrders = await vendorOrders.CountAsync(o => o.Status == OrderStatus.Pending);
 
-        var totalRevenue = await vendorOrders
-            .Where(o => o.PaymentStatus == PaymentStatus.Paid)
-            .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
+        // Revenue counts only the items that belong to this vendor, not the full order amount
+        var vendorRevenue = await _context.OrderItems
+            .Where(oi => oi.ProductId != null
+                      && vendorProductIds.Contains(oi.ProductId!.Value)
+                      && oi.Order.PaymentStatus == PaymentStatus.Paid)
+            .SumAsync(oi => (decimal?)oi.Subtotal) ?? 0;
 
-        var revenueThisMonth = await vendorOrders
-            .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.CreatedAt >= monthStart)
-            .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
+        var vendorRevenueThisMonth = await _context.OrderItems
+            .Where(oi => oi.ProductId != null
+                      && vendorProductIds.Contains(oi.ProductId!.Value)
+                      && oi.Order.PaymentStatus == PaymentStatus.Paid
+                      && oi.Order.CreatedAt >= monthStart)
+            .SumAsync(oi => (decimal?)oi.Subtotal) ?? 0;
 
         var ratings = await _context.Reviews
             .Where(r => vendorProductIds.Contains(r.ProductId) && r.IsApproved)
@@ -131,20 +140,23 @@ public class DashboardService : IDashboardService
 
         var averageRating = ratings.Count > 0 ? ratings.Average() : 0;
 
-        var recentOrders = await vendorOrders
+        // Materialize before calling .ToString() on enum
+        var recentOrdersRaw = await vendorOrders
             .Include(o => o.User)
             .OrderByDescending(o => o.CreatedAt)
             .Take(5)
-            .Select(o => new RecentOrderDto
-            {
-                OrderId = o.Id,
-                OrderNumber = o.OrderNumber,
-                CustomerEmail = o.User.Email ?? string.Empty,
-                TotalAmount = o.TotalAmount,
-                Status = o.Status.ToString(),
-                CreatedAt = o.CreatedAt
-            })
+            .Select(o => new { o.Id, o.OrderNumber, CustomerEmail = o.User.Email ?? string.Empty, o.TotalAmount, o.Status, o.CreatedAt })
             .ToListAsync();
+
+        var recentOrders = recentOrdersRaw.Select(o => new RecentOrderDto
+        {
+            OrderId = o.Id,
+            OrderNumber = o.OrderNumber,
+            CustomerEmail = o.CustomerEmail,
+            TotalAmount = o.TotalAmount,
+            Status = o.Status.ToString(),
+            CreatedAt = o.CreatedAt
+        }).ToList();
 
         var topProducts = await _context.OrderItems
             .Where(oi => oi.ProductId != null && vendorProductIds.Contains(oi.ProductId!.Value))
@@ -167,8 +179,8 @@ public class DashboardService : IDashboardService
             LowStockProducts = lowStockProducts,
             TotalOrders = totalOrders,
             PendingOrders = pendingOrders,
-            TotalRevenue = totalRevenue,
-            RevenueThisMonth = revenueThisMonth,
+            TotalRevenue = vendorRevenue,
+            RevenueThisMonth = vendorRevenueThisMonth,
             AverageRating = Math.Round(averageRating, 1),
             TotalReviews = ratings.Count,
             RecentOrders = recentOrders,

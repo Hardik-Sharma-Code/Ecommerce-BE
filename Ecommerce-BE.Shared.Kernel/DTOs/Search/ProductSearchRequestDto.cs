@@ -8,7 +8,7 @@ public class ProductSearchRequestDto
 
     public int? CategoryId { get; set; }
 
-    public string? VendorId { get; set; }
+    public int? VendorId { get; set; }
 
     [Range(0, double.MaxValue)]
     public decimal? MinPrice { get; set; }

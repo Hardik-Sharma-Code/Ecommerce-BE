@@ -101,7 +101,11 @@ public class AddressService : IAddressService
 
         if (address.IsDefault)
         {
-            var remaining = (await _addressRepository.GetByUserIdAsync(userId)).FirstOrDefault();
+            // Fix #9: order deterministically so the oldest address becomes the new default,
+            // not a random entry depending on DB storage order.
+            var remaining = (await _addressRepository.GetByUserIdAsync(userId))
+                .OrderBy(a => a.CreatedAt)
+                .FirstOrDefault();
             if (remaining is not null)
             {
                 remaining.IsDefault = true;

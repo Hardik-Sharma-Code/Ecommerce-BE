@@ -12,7 +12,8 @@ public class Product
     public decimal? CompareAtPrice { get; set; }
     public int CategoryId { get; set; }
     public Category Category { get; set; } = null!;
-    public string VendorId { get; set; } = string.Empty;
+    public int VendorId { get; set; }
+    public VendorProfile Vendor { get; set; } = null!;
     public int StockQuantity { get; set; } = 0;
     public int LowStockThreshold { get; set; } = 5;
     public bool IsActive { get; set; } = true;

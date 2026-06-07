@@ -112,7 +112,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                   .WithMany(c => c.Products)
                   .HasForeignKey(p => p.CategoryId)
                   .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<ApplicationUser>()
+            entity.HasOne(p => p.Vendor)
                   .WithMany()
                   .HasForeignKey(p => p.VendorId)
                   .OnDelete(DeleteBehavior.Restrict);

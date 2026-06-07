@@ -79,9 +79,12 @@ public class ReviewRepository : IReviewRepository
         return new PagedResult<Review>(items, total, page, pageSize);
     }
 
+    // Fix #4: only count orders that are Delivered or have a Paid payment so cancelled/pending
+    // orders do not qualify a user as a verified purchaser.
     public async Task<bool> HasPurchasedProductAsync(string userId, int productId) =>
         await _context.Orders
-            .Where(o => o.UserId == userId)
+            .Where(o => o.UserId == userId
+                        && (o.Status == OrderStatus.Delivered || o.PaymentStatus == PaymentStatus.Paid))
             .AnyAsync(o => o.Items.Any(i => i.ProductId == productId));
 
     public async Task<(double Average, int Count)> GetRatingSummaryAsync(int productId)

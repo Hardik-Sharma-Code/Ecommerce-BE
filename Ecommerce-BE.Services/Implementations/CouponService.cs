@@ -119,6 +119,13 @@ public class CouponService : ICouponService
         if (coupon is null)
             return ApiResponse<CouponDto>.Fail("Coupon not found.");
 
+        // Fix #8: validate date range against the *incoming* values before touching the tracked entity.
+        // Mutating first and then returning Fail leaves dirty state in the EF change tracker.
+        var newValidFrom = dto.ValidFrom ?? coupon.ValidFrom;
+        var newValidTo   = dto.ValidTo   ?? coupon.ValidTo;
+        if (newValidTo <= newValidFrom)
+            return ApiResponse<CouponDto>.Fail("ValidTo must be after ValidFrom.");
+
         if (dto.Description is not null) coupon.Description = dto.Description;
         if (dto.DiscountType.HasValue) coupon.DiscountType = dto.DiscountType.Value;
         if (dto.DiscountValue.HasValue) coupon.DiscountValue = dto.DiscountValue.Value;
@@ -129,9 +136,6 @@ public class CouponService : ICouponService
         if (dto.ValidTo.HasValue) coupon.ValidTo = dto.ValidTo.Value;
         if (dto.IsActive.HasValue) coupon.IsActive = dto.IsActive.Value;
         coupon.UpdatedAt = DateTime.UtcNow;
-
-        if (coupon.ValidTo <= coupon.ValidFrom)
-            return ApiResponse<CouponDto>.Fail("ValidTo must be after ValidFrom.");
 
         await _couponRepository.UpdateAsync(coupon);
         await _couponRepository.SaveAsync();
